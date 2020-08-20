@@ -1,7 +1,7 @@
 import Mario from './sprites/Mario';
 import Goomba from './sprites/Goomba';
 import Turtle from './sprites/Turtle';
-import PowerUp from './sprites/PowerUp';
+import Coin from './sprites/Coin';
 import SMBTileSprite from './sprites/SMBTileSprite';
 import Fire from './sprites/Fire';
 
@@ -45,70 +45,32 @@ class GameScene extends Phaser.Scene {
 
     const map = this.make.tilemap({ key: 'map', tileWidth: 16, tileHeight: 16 });
     const tileset = map.addTilesetImage('SuperMarioBros-World1-1');
-    const world = map.createDynamicLayer('world', tileset);
+    this.world = map.createDynamicLayer('world', tileset);
 
     // marca a colisao com os blocos do mapa
     map.setCollision([14, 15, 16, 21, 22, 23, 24, 25, 27, 28, 40, 41]);
 
-    this.add.tileSprite(0, 0, world.width, 500, 'clouds');
+    /*
+    let questionBlock = map.filterTiles(tile => {
+      //filtra somente os blocos que interessam
+      if (tile.index == 41) {
+        //console.log(tile);
+        //tile.setSize(8,8);
+        //tile.faceTop = false;
+        tile.collisionCallback = (mario, bloco) => {
+          if (mario.body.blocked.up) {
+            console.log('blocked up');
+          }
+          //console.log('Colidiu com o bloco: ', mario);
+          //bloco.setSize(8, 8);
+        };
+        return true;
+      }
 
-    // animacao para o hero
-    this.anims.create({
-      key: 'walk',
-      repeat: -1,
-      frameRate: 10,
-      frames: this.anims.generateFrameNames('mario-sprites', {prefix: 'mario/walk', start: 1, end: 3 }),
     });
+    */
 
-    this.anims.create({
-      key: 'swim',
-      repeat: -1,
-      frameRate: 10,
-      frames: this.anims.generateFrameNames('mario-sprites', {prefix: 'mario/swim', start: 1, end: 6 }),
-    });
-
-    this.anims.create({
-      key: 'climb',
-      repeat: -1,
-      frameRate: 10,
-      frames: this.anims.generateFrameNames('mario-sprites', {prefix: 'mario/swin', start: 1, end: 2 }),
-    });
-
-    this.anims.create({
-      key: 'stand',
-      repeat: -1,
-      frameRate: 10,
-      frames: [{frame: 'mario/stand', key: 'mario-sprites'}],
-    });
-
-    this.anims.create({
-      key: 'turn',
-      repeat: -1,
-      frameRate: 10,
-      frames: [{frame: 'mario/turn', key: 'mario-sprites'}],
-    });
-
-    this.anims.create({
-      key: 'jump',
-      repeat: -1,
-      frameRate: 10,
-      frames: [{frame: 'mario/jump', key: 'mario-sprites'}],
-    });
-
-    this.anims.create({
-        key: 'grow',
-        frames: [
-          {frame: 'mario/half', key: 'mario-sprites'},
-          {frame: 'mario/stand', key: 'mario-sprites'},
-          {frame: 'mario/half', key: 'mario-sprites'},
-          {frame: 'mario/standSuper', key: 'mario-sprites'},
-          {frame: 'mario/half', key: 'mario-sprites'},
-          {frame: 'mario/standSuper', key: 'mario-sprites'},
-        ],
-        frameRate: 1,
-        repeat: 0,
-        repeatDelay: 0
-    });
+    this.add.tileSprite(0, 0, this.world.width, 500, 'clouds');
 
     // MARIO!!!
     this.mario = new Mario({
@@ -119,7 +81,36 @@ class GameScene extends Phaser.Scene {
     });
 
     // aqui informa as colisões dos sprites
-    this.physics.add.collider(this.mario, world);
+    this.physics.add.collider(this.mario, this.world, (mario, tile) => {
+
+      if (mario.body.blocked.up) {
+        console.log('houve colisao da cabeca do mario');
+        // se ele bateu numa questionMark então mostra a moeda
+        if (tile.index == 41) {
+          setTimeout(() => {tile.index = 42;}, 100);
+          // Make a coin
+          let coin = new Coin({
+              scene: this.mario.scene,
+              key: 'coin',
+              x: tile.x * 16 + 8,
+              y: tile.y * 16 - 8,
+              tilemap: this.world
+          });
+
+        }
+        else if(tile.index==42) {
+          setTimeout(() => {tile.index = 43;}, 100);
+
+        }
+        else if(tile.index==43) {
+          setTimeout(() => {tile.index = 44;}, 100);
+        }
+
+      }
+
+    });
+
+
 
     // define o input do teclado
     this.cursorKeys = this.input.keyboard.createCursorKeys();
@@ -133,6 +124,14 @@ class GameScene extends Phaser.Scene {
 
     // Run the update method of Mario
     this.mario.update(this.cursorKeys, time, delta);
+
+    /*
+    // essa aqui nao deu certo, ainda não sei porque
+    this.physics.world.collide(this.mario, this.world, () => {
+      console.log('outra forma de colisao');
+    });
+    */
+
 
   }
 

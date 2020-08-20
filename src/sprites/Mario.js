@@ -8,12 +8,16 @@ export default class Mario extends Phaser.GameObjects.Sprite {
     config.scene.add.existing(this);
     this.body.setMaxVelocity(150, 250);
     this.body.setDrag(500);
+    this.createAnimations(config.scene);
     this.anims.play('stand');
     this.body.setSize(16, 16);
     this.jumpCount = 0;
     this.body.collideWorldBounds = true;
     //this.setCollideWorldBounds(true);
     //this.onWorldBounds = true;
+    //this.body.onCollide = new Phaser.Signal();
+    //this.body.onCollide.add(hitSprite, this);
+
   }
 
   update(keys, time, delta) {
@@ -95,6 +99,68 @@ export default class Mario extends Phaser.GameObjects.Sprite {
     if (this.body.speed < 6 && this.body.blocked.down && this.jumpCount == 0) {
       this.anims.play('stand', true);
     }
+
+  }
+
+  createAnimations(scene) {
+    // animacao para o hero
+    scene.anims.create({
+      key: 'walk',
+      repeat: -1,
+      frameRate: 10,
+      frames: scene.anims.generateFrameNames('mario-sprites', {prefix: 'mario/walk', start: 1, end: 3 }),
+    });
+
+    scene.anims.create({
+      key: 'swim',
+      repeat: -1,
+      frameRate: 10,
+      frames: scene.anims.generateFrameNames('mario-sprites', {prefix: 'mario/swim', start: 1, end: 6 }),
+    });
+
+    scene.anims.create({
+      key: 'climb',
+      repeat: -1,
+      frameRate: 10,
+      frames: scene.anims.generateFrameNames('mario-sprites', {prefix: 'mario/swin', start: 1, end: 2 }),
+    });
+
+    scene.anims.create({
+      key: 'stand',
+      repeat: -1,
+      frameRate: 10,
+      frames: [{frame: 'mario/stand', key: 'mario-sprites'}],
+    });
+
+    scene.anims.create({
+      key: 'turn',
+      repeat: -1,
+      frameRate: 10,
+      frames: [{frame: 'mario/turn', key: 'mario-sprites'}],
+    });
+
+    scene.anims.create({
+      key: 'jump',
+      repeat: -1,
+      frameRate: 10,
+      frames: [{frame: 'mario/jump', key: 'mario-sprites'}],
+    });
+
+    scene.anims.create({
+        key: 'grow',
+        frames: [
+          {frame: 'mario/half', key: 'mario-sprites'},
+          {frame: 'mario/stand', key: 'mario-sprites'},
+          {frame: 'mario/half', key: 'mario-sprites'},
+          {frame: 'mario/standSuper', key: 'mario-sprites'},
+          {frame: 'mario/half', key: 'mario-sprites'},
+          {frame: 'mario/standSuper', key: 'mario-sprites'},
+        ],
+        frameRate: 1,
+        repeat: 0,
+        repeatDelay: 0
+    });
+
 
   }
 
