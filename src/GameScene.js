@@ -59,10 +59,11 @@ class GameScene extends Phaser.Scene {
 
     // Add and play the music
     this.music = this.sound.add('overworld');
+
     this.music.play({
         loop: true
     });
-
+    
     const map = this.make.tilemap({ key: 'map', tileWidth: 16, tileHeight: 16 });
     const tileset = map.addTilesetImage('SuperMarioBros-World1-1');
     this.world = map.createDynamicLayer('world', tileset);
@@ -92,6 +93,24 @@ class GameScene extends Phaser.Scene {
 
     this.add.tileSprite(0, 0, this.world.width, 500, 'clouds');
 
+    // An emitter for bricks when blocks are destroyed.
+    this.blockEmitter = this.add.particles('mario-sprites');
+
+    this.blockEmitter.createEmitter({
+        frame: {
+            frames: ['brick'],
+            cycle: true
+        },
+        gravityY: 1000,
+        lifespan: 2000,
+        speed: 400,
+        angle: {
+            min: -90 - 25,
+            max: -45 - 25
+        },
+        frequency: -1
+    });
+
     // MARIO!!!
     this.mario = new Mario({
         scene: this,
@@ -102,6 +121,7 @@ class GameScene extends Phaser.Scene {
 
     // aqui informa as colisões dos sprites
     this.physics.add.collider(this.mario, this.world, (mario, tile) => {
+
 
       if (mario.body.blocked.up) {
         //console.log('houve colisao da cabeca do mario');
@@ -144,7 +164,13 @@ class GameScene extends Phaser.Scene {
 
         }
 
-      }
+        //console.log(tile);
+        if (tile.index == 15) {
+          this.world.tilemap.removeTileAt(tile.x, tile.y);
+          this.mario.scene.blockEmitter.emitParticle(6, tile.x * 16, tile.y * 16);
+        }
+
+      }// end if cabecada mario
 
     });
 
