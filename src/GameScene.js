@@ -131,8 +131,7 @@ class GameScene extends Phaser.Scene {
         //console.log('houve colisao da cabeca do mario');
 
         // se ele bateu numa questionMark então mostra a moeda
-        if (tile.index == 41) {
-          tile.index = 44;
+        if (tile.index == 41 || tile.index == 42 || tile.index == 43) {
           // liga um contador de tempo até 12
           this.setIntervalCount((count) => {
             console.log(count);
@@ -146,12 +145,13 @@ class GameScene extends Phaser.Scene {
             //se estiver na metade da contagem, mostra a moeda e anima
             if (count == 6) {
               // Make a coin
+              tile.index = 44;
               let coin = new Coin({
-                  scene: this.mario.scene,
-                  key: 'coin',
-                  x: tile.x * 16 + 8,
-                  y: tile.y * 16 - 8,
-                  tilemap: this.world
+                scene: this.mario.scene,
+                key: 'coin',
+                x: tile.x * 16 + 8,
+                y: tile.y * 16 - 8,
+                tilemap: this.world
               });
               // aqui é o movimento de subida da moeda
               this.add.tween({
@@ -160,7 +160,8 @@ class GameScene extends Phaser.Scene {
                 alpha: 1,
                 duration: 300,
                 ease: 'Quad.easeOut',
-                onComplete: () => {coin.destroy()},
+                onComplete: () => {
+                  coin.destroy()},
               });
             }
           }, 8, 12); // 8 milisegundos e 12 ciclos
@@ -194,7 +195,22 @@ class GameScene extends Phaser.Scene {
     // Run the update method of Mario
     this.mario.update(this.cursorKeys, time, delta);
 
-    this.questionBlocksDelta += 20;
+    this.questionBlockAnimation(delta);
+
+    /*
+    // essa aqui nao deu certo, ainda não sei porque
+    this.physics.world.collide(this.mario, this.world, () => {
+      console.log('outra forma de colisao');
+    });
+    */
+
+
+  }
+
+  questionBlockAnimation(delta) {
+
+    this.questionBlocksDelta += delta;
+
     let frame = 0;
     if (this.questionBlocksDelta > 1100)
       frame = 4;
@@ -229,15 +245,6 @@ class GameScene extends Phaser.Scene {
       this.questionBlocksDelta = 0;
       frame = 0;
     }
-
-
-    /*
-    // essa aqui nao deu certo, ainda não sei porque
-    this.physics.world.collide(this.mario, this.world, () => {
-      console.log('outra forma de colisao');
-    });
-    */
-
 
   }
 
