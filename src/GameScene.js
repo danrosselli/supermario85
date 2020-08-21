@@ -60,53 +60,57 @@ class GameScene extends Phaser.Scene {
     // Add and play the music
     this.music = this.sound.add('overworld');
 
+    /*
     this.music.play({
         loop: true
     });
-    
+    */
     const map = this.make.tilemap({ key: 'map', tileWidth: 16, tileHeight: 16 });
     const tileset = map.addTilesetImage('SuperMarioBros-World1-1');
     this.world = map.createDynamicLayer('world', tileset);
 
+    console.log(tileset.tileData);
+
     // marca a colisao com os blocos do mapa
     map.setCollision([14, 15, 16, 21, 22, 23, 24, 25, 27, 28, 40, 41]);
 
-    /*
-    let questionBlock = map.filterTiles(tile => {
+    this.questionBlocks = map.filterTiles(tile => {
       //filtra somente os blocos que interessam
       if (tile.index == 41) {
-        //console.log(tile);
-        //tile.setSize(8,8);
-        //tile.faceTop = false;
+        /*
         tile.collisionCallback = (mario, bloco) => {
           if (mario.body.blocked.up) {
             console.log('blocked up');
           }
           //console.log('Colidiu com o bloco: ', mario);
-          //bloco.setSize(8, 8);
         };
+        */
         return true;
       }
 
     });
-    */
+
+    this.questionBlocksDelta = 0;
+
+    console.log(this.questionBlocks);
+
 
     this.add.tileSprite(0, 0, this.world.width, 500, 'clouds');
 
     // An emitter for bricks when blocks are destroyed.
-    this.blockEmitter = this.add.particles('mario-sprites');
+    this.blockEmitterManager = this.add.particles('mario-sprites');
 
-    this.blockEmitter.createEmitter({
+    this.blockEmitter = this.blockEmitterManager.createEmitter({
         frame: {
             frames: ['brick'],
             cycle: true
         },
         gravityY: 1000,
-        lifespan: 2000,
+        lifespan: 1000,
         speed: 400,
         angle: {
-            min: -90 - 25,
-            max: -45 - 25
+            min: -115,
+            max: -70
         },
         frequency: -1
     });
@@ -119,15 +123,17 @@ class GameScene extends Phaser.Scene {
         y: 16 * 9
     });
 
-    // aqui informa as colisões dos sprites
+    // aqui informa as colisões do mario com o tilemap
     this.physics.add.collider(this.mario, this.world, (mario, tile) => {
 
-
+      // aqui testa se a cabeca do mari obateu em alguma coisa
       if (mario.body.blocked.up) {
         //console.log('houve colisao da cabeca do mario');
+
         // se ele bateu numa questionMark então mostra a moeda
         if (tile.index == 41) {
           tile.index = 44;
+          // liga um contador de tempo até 12
           this.setIntervalCount((count) => {
             console.log(count);
             if (count < 6) {
@@ -136,7 +142,8 @@ class GameScene extends Phaser.Scene {
             else {
               tile.pixelY++;
             }
-            //console.log(tile);
+
+            //se estiver na metade da contagem, mostra a moeda e anima
             if (count == 6) {
               // Make a coin
               let coin = new Coin({
@@ -146,28 +153,26 @@ class GameScene extends Phaser.Scene {
                   y: tile.y * 16 - 8,
                   tilemap: this.world
               });
-              console.log(coin);
+              // aqui é o movimento de subida da moeda
               this.add.tween({
                 targets: [coin],
                 y: (coin.y - 18),
-                alpha: 0.6,
-                duration: 200,
+                alpha: 1,
+                duration: 300,
                 ease: 'Quad.easeOut',
                 onComplete: () => {coin.destroy()},
               });
-              //tween.start();
-
-
             }
-          }, 8, 12);
+          }, 8, 12); // 8 milisegundos e 12 ciclos
 
 
         }
 
-        //console.log(tile);
+        //se ele bateu num bloco de tijolo, destrou ele ou desloca
         if (tile.index == 15) {
           this.world.tilemap.removeTileAt(tile.x, tile.y);
-          this.mario.scene.blockEmitter.emitParticle(6, tile.x * 16, tile.y * 16);
+          //this.blockEmitter.emitParticle(6, tile.x * 16, tile.y * 16);
+          this.blockEmitter.explode(6, tile.pixelX + 8, tile.pixelY);
         }
 
       }// end if cabecada mario
@@ -189,6 +194,43 @@ class GameScene extends Phaser.Scene {
     // Run the update method of Mario
     this.mario.update(this.cursorKeys, time, delta);
 
+    this.questionBlocksDelta += 20;
+    let frame = 0;
+    if (this.questionBlocksDelta > 1100)
+      frame = 4;
+    else if (this.questionBlocksDelta > 900)
+      frame = 3;
+    else if (this.questionBlocksDelta > 700)
+      frame = 2;
+    else if (this.questionBlocksDelta > 500)
+      frame = 1;
+
+    for (let tile of this.questionBlocks) {
+
+      if (tile.index != 44) {
+        if (frame == 4) {
+          tile.index = 41;
+        }
+        else if (frame == 3) {
+          tile.index = 42;
+        }
+        else if (frame == 2) {
+          tile.index = 43
+        }
+        else if (frame == 1) {
+          tile.index = 42;
+        }
+      }
+
+      //console.log(this.questionBlocksDelta);
+    }
+
+    if (this.questionBlocksDelta > 1100) {
+      this.questionBlocksDelta = 0;
+      frame = 0;
+    }
+
+
     /*
     // essa aqui nao deu certo, ainda não sei porque
     this.physics.world.collide(this.mario, this.world, () => {
@@ -199,6 +241,7 @@ class GameScene extends Phaser.Scene {
 
   }
 
+  // funcao para intervalo de tempo com contagem máxima
   setIntervalCount(callback, delay, repetitions) {
     var x = 0;
     callback(x);
