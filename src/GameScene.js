@@ -17,6 +17,20 @@ class GameScene extends Phaser.Scene {
 
   preload() {
 
+    // Music to play. It's not properly edited for an continous loop, but game play experience isn't really the aim of this repository either.
+    this.load.audio('overworld', [
+        'assets/audio/overworld.ogg',
+        'assets/audio/overworld.mp3'
+    ]);
+
+    // Sound effects in a audioSprite.
+    this.load.audioSprite('sfx', 'assets/audio/sfx.json', [
+        'assets/audio/sfx.ogg',
+        'assets/audio/sfx.mp3'
+    ], {
+        instances: 4
+    });
+
     //this.load.image('blue-sky', 'assets/images/blue-sky.png'); // 16-bit later
     this.load.image('clouds', 'assets/images/clouds.png'); // 16-bit later
 
@@ -42,6 +56,12 @@ class GameScene extends Phaser.Scene {
     // marca as bordas desse mapa com 212 x 15 blocos de 16x16 pixels
     this.physics.world.setBounds(0,0,16 * 212, 16 * 15);
     this.cameras.main.setRoundPixels(true);
+
+    // Add and play the music
+    this.music = this.sound.add('overworld');
+    this.music.play({
+        loop: true
+    });
 
     const map = this.make.tilemap({ key: 'map', tileWidth: 16, tileHeight: 16 });
     const tileset = map.addTilesetImage('SuperMarioBros-World1-1');
@@ -84,26 +104,44 @@ class GameScene extends Phaser.Scene {
     this.physics.add.collider(this.mario, this.world, (mario, tile) => {
 
       if (mario.body.blocked.up) {
-        console.log('houve colisao da cabeca do mario');
+        //console.log('houve colisao da cabeca do mario');
         // se ele bateu numa questionMark então mostra a moeda
         if (tile.index == 41) {
-          setTimeout(() => {tile.index = 42;}, 100);
-          // Make a coin
-          let coin = new Coin({
-              scene: this.mario.scene,
-              key: 'coin',
-              x: tile.x * 16 + 8,
-              y: tile.y * 16 - 8,
-              tilemap: this.world
-          });
+          tile.index = 44;
+          this.setIntervalCount((count) => {
+            console.log(count);
+            if (count < 6) {
+              tile.pixelY--;
+            }
+            else {
+              tile.pixelY++;
+            }
+            //console.log(tile);
+            if (count == 6) {
+              // Make a coin
+              let coin = new Coin({
+                  scene: this.mario.scene,
+                  key: 'coin',
+                  x: tile.x * 16 + 8,
+                  y: tile.y * 16 - 8,
+                  tilemap: this.world
+              });
+              console.log(coin);
+              this.add.tween({
+                targets: [coin],
+                y: (coin.y - 18),
+                alpha: 0.6,
+                duration: 200,
+                ease: 'Quad.easeOut',
+                onComplete: () => {coin.destroy()},
+              });
+              //tween.start();
 
-        }
-        else if(tile.index==42) {
-          setTimeout(() => {tile.index = 43;}, 100);
 
-        }
-        else if(tile.index==43) {
-          setTimeout(() => {tile.index = 44;}, 100);
+            }
+          }, 8, 12);
+
+
         }
 
       }
@@ -135,6 +173,19 @@ class GameScene extends Phaser.Scene {
 
   }
 
-}
+  setIntervalCount(callback, delay, repetitions) {
+    var x = 0;
+    callback(x);
+    var intervalID = window.setInterval(function () {
+      if (++x === repetitions-1) {
+        window.clearInterval(intervalID);
+      }
+      callback(x);
+    }, delay);
+  }
+
+
+
+}// end class
 
 export default GameScene;
