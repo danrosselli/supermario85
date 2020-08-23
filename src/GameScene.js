@@ -1,7 +1,9 @@
 import Mario from './sprites/Mario';
+import Coin from './sprites/Coin';
+import Mushroom from './sprites/Mushroom';
+
 import Goomba from './sprites/Goomba';
 import Turtle from './sprites/Turtle';
-import Coin from './sprites/Coin';
 import SMBTileSprite from './sprites/SMBTileSprite';
 import Fire from './sprites/Fire';
 
@@ -70,7 +72,7 @@ class GameScene extends Phaser.Scene {
     this.layer = map.createDynamicLayer('world', tileset);
     this.objLayer = map.getObjectLayer('modifiers').objects;
 
-    console.log(tileset.tileProperties);
+    //console.log(tileset.tileProperties);
     //console.log(this.objLayer);
 
     // marca a colisao com os blocos do mapa
@@ -151,8 +153,8 @@ class GameScene extends Phaser.Scene {
         //console.log(tile);
         // se ele bateu numa questionMark então verifica de qual tipo será o objeto
         if (tile.index == 41 || tile.index == 42 || tile.index == 43) {
-
           //console.log(tile);
+          tile.index = 44;
           // liga um contador de tempo até 12
           this.setIntervalCount((count) => {
             if (count < 6) {
@@ -164,11 +166,16 @@ class GameScene extends Phaser.Scene {
 
             //quando o questionMark estiver no alto, libera os sprites
             if (count == 6) {
-
-              tile.index = 44;
-              console.log(tile.properties.powerUp)
+              //console.log(tile.properties.powerUp)
               if (tile.properties.powerUp == "mushroom") {
-
+                let mushroom = new Mushroom({
+                  scene: this.mario.scene,
+                  layer: this.layer,
+                  key: 'mushroom',
+                  x: tile.x * 16 + 8,
+                  y: tile.y * 16 - 16,
+                  action: 'move',
+                });
               } else {
                 // se não é nenhuma das outras, é uma moeda
                 // mostra a moeda na animação de sumir
