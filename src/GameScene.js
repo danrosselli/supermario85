@@ -67,13 +67,16 @@ class GameScene extends Phaser.Scene {
     */
     const map = this.make.tilemap({ key: 'map', tileWidth: 16, tileHeight: 16 });
     const tileset = map.addTilesetImage('SuperMarioBros-World1-1');
-    this.world = map.createDynamicLayer('world', tileset);
+    this.layer = map.createDynamicLayer('world', tileset);
+    this.objLayer = map.getObjectLayer('modifiers').objects;
 
-    console.log(tileset.tileData);
+    console.log(tileset.tileProperties);
+    //console.log(this.objLayer);
 
     // marca a colisao com os blocos do mapa
     map.setCollision([14, 15, 16, 21, 22, 23, 24, 25, 27, 28, 40, 41]);
 
+    // aqui coloca no array todos os tiles que são do tipo questionMark
     this.questionBlocks = map.filterTiles(tile => {
       //filtra somente os blocos que interessam
       if (tile.index == 41) {
@@ -92,10 +95,26 @@ class GameScene extends Phaser.Scene {
 
     this.questionBlocksDelta = 0;
 
-    console.log(this.questionBlocks);
+    //console.log(this.questionBlocks);
 
+    // aqui vou verificar a camada dos objetos que veio do tileset
+    // e vou colocar os mofificadores dentro das propriedades do tileset
+    this.objLayer.forEach((modifier) => {
+      // pega o tile do mapa que tem esse modificador
+      let tile = this.layer.getTileAt(modifier.x / 16, modifier.y / 16 - 1);
+      // pega somente as proprieddades desse tile
+      // e vai fazendo um merge dos objetos dentro do properties do tile
+      if (tile) {
+        Object.assign(tile.properties, tileset.tileProperties[modifier.gid - 1]);
+        modifier.properties.forEach((item, i) => {
+          Object.assign(tile.properties, {[item.name]: item.value});
+        });
+      }
+    });
 
-    this.add.tileSprite(0, 0, this.world.width, 500, 'clouds');
+    //console.log(modifiers);
+
+    this.add.tileSprite(0, 0, this.layer.width, 500, 'clouds');
 
     // An emitter for bricks when blocks are destroyed.
     this.blockEmitterManager = this.add.particles('mario-sprites');
@@ -124,17 +143,18 @@ class GameScene extends Phaser.Scene {
     });
 
     // aqui informa as colisões do mario com o tilemap
-    this.physics.add.collider(this.mario, this.world, (mario, tile) => {
+    this.physics.add.collider(this.mario, this.layer, (mario, tile) => {
 
       // aqui testa se a cabeca do mari obateu em alguma coisa
       if (mario.body.blocked.up) {
         //console.log('houve colisao da cabeca do mario');
-
-        // se ele bateu numa questionMark então mostra a moeda
+        //console.log(tile);
+        // se ele bateu numa questionMark então verifica de qual tipo será o objeto
         if (tile.index == 41 || tile.index == 42 || tile.index == 43) {
+
+          //console.log(tile);
           // liga um contador de tempo até 12
           this.setIntervalCount((count) => {
-            console.log(count);
             if (count < 6) {
               tile.pixelY--;
             }
@@ -142,38 +162,51 @@ class GameScene extends Phaser.Scene {
               tile.pixelY++;
             }
 
-            //se estiver na metade da contagem, mostra a moeda e anima
+            //quando o questionMark estiver no alto, libera os sprites
             if (count == 6) {
-              // Make a coin
+
               tile.index = 44;
-              let coin = new Coin({
-                scene: this.mario.scene,
-                key: 'coin',
-                x: tile.x * 16 + 8,
-                y: tile.y * 16 - 8,
-                tilemap: this.world
-              });
-              // aqui é o movimento de subida da moeda
-              this.add.tween({
-                targets: [coin],
-                y: (coin.y - 18),
-                alpha: 1,
-                duration: 300,
-                ease: 'Quad.easeOut',
-                onComplete: () => {
-                  coin.destroy()},
-              });
+              console.log(tile.properties.powerUp)
+              if (tile.properties.powerUp == "mushroom") {
+
+              } else {
+                // se não é nenhuma das outras, é uma moeda
+                // mostra a moeda na animação de sumir
+                let coin = new Coin({
+                  scene: this.mario.scene,
+                  key: 'coin',
+                  x: tile.x * 16 + 8,
+                  y: tile.y * 16 - 16,
+                  action: 'disapear'
+                });
+
+              }// else coin
+
             }
           }, 8, 12); // 8 milisegundos e 12 ciclos
 
+        }// fim if questionMark
 
-        }
+        //se ele bateu num bloco de tijolo, destrou ele ou desloca pra cima
+        if (tile.index == 15 && !tile.properties.anim) {
+          //console.log(tile);
+          // se o mário está pequenp, desloca o bloco
+          tile.properties.anim = true;
+          this.setIntervalCount((count) => {
+            if (count < 6) {
+              tile.pixelY--;
+            }
+            else {
+              tile.pixelY++;
+            }
+            if (count == 11)
+              tile.properties.anim = false;
+          }, 8, 12);
 
-        //se ele bateu num bloco de tijolo, destrou ele ou desloca
-        if (tile.index == 15) {
-          this.world.tilemap.removeTileAt(tile.x, tile.y);
-          //this.blockEmitter.emitParticle(6, tile.x * 16, tile.y * 16);
-          this.blockEmitter.explode(6, tile.pixelX + 8, tile.pixelY);
+          // se o mário está grande, explode o bloco
+          //this.layer.tilemap.removeTileAt(tile.x, tile.y);
+          //this.blockEmitter.explode(6, tile.pixelX + 8, tile.pixelY);
+
         }
 
       }// end if cabecada mario
@@ -199,7 +232,7 @@ class GameScene extends Phaser.Scene {
 
     /*
     // essa aqui nao deu certo, ainda não sei porque
-    this.physics.world.collide(this.mario, this.world, () => {
+    this.physics.world.collide(this.mario, this.layer, () => {
       console.log('outra forma de colisao');
     });
     */
