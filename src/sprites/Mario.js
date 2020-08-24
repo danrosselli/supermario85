@@ -6,8 +6,11 @@ export default class Mario extends Phaser.GameObjects.Sprite {
     config.scene.physics.world.enable(this);
     config.scene.physics.world.setBounds(0,0,3392, 240);
     config.scene.add.existing(this);
+    this.scene = config.scene;
     this.body.setMaxVelocity(150, 250);
     this.body.setDrag(500);
+    this.state = '';
+
     this.createAnimations(config.scene);
     this.anims.play('stand');
     this.body.setSize(16, 16);
@@ -17,10 +20,23 @@ export default class Mario extends Phaser.GameObjects.Sprite {
     //this.onWorldBounds = true;
     //this.body.onCollide = new Phaser.Signal();
     //this.body.onCollide.add(hitSprite, this);
+    /*
+    this.on('animationcomplete', () => {
+      console.log('animation complete');
+      if (this.anims.currentAnim.key == 'grow') {
+        this.state = 'super';
+        //this.scene.physics.world.resume();
+      }
 
+    }, this);
+    */
   }
 
   update(keys, time, delta) {
+
+    // se ele estiver encolhendo ou crescendo, não faz update de teclas
+    if (this.state == 'growing' || this.state == 'shrinking')
+      return;
 
     // aqui testa se o movimento de jumping pode acorrer
     if (keys.up.isDown &&
@@ -29,7 +45,7 @@ export default class Mario extends Phaser.GameObjects.Sprite {
         this.jumpCount == 0
         ) {
 
-      this.anims.play('jump');
+      this.anims.play('jump' + this.state);
       this.jumpCount = 10;
       this.body.setAccelerationY(-2500);
 
@@ -58,9 +74,9 @@ export default class Mario extends Phaser.GameObjects.Sprite {
         this.body.setAccelerationX(700);
         if (!this.jumpCount) {
           if (this.body.velocity.x < 0)
-            this.anims.play('turn', true);
+            this.anims.play('turn' + this.state, true);
           else
-            this.anims.play('walk', true);
+            this.anims.play('walk' + this.state, true);
         }
 
       }
@@ -74,9 +90,11 @@ export default class Mario extends Phaser.GameObjects.Sprite {
         this.body.setAccelerationX(-700);
         if (!this.jumpCount) {
           if (this.body.velocity.x > 0)
-            this.anims.play('turn', true);
-          else
-            this.anims.play('walk', true);
+            this.anims.play('turn' + this.state, true);
+          else {
+            this.anims.play('walk' + this.state, true);
+          }
+
         }
       }
     }
@@ -97,7 +115,7 @@ export default class Mario extends Phaser.GameObjects.Sprite {
 
     // aqui fica na posicao de stand se ele está parado, está no chao e nao está pulando
     if (this.body.speed < 6 && this.body.blocked.down && this.jumpCount == 0) {
-      this.anims.play('stand', true);
+      this.anims.play('stand' + this.state, true);
     }
 
   }
@@ -109,6 +127,13 @@ export default class Mario extends Phaser.GameObjects.Sprite {
       repeat: -1,
       frameRate: 10,
       frames: scene.anims.generateFrameNames('mario-sprites', {prefix: 'mario/walk', start: 1, end: 3 }),
+    });
+
+    scene.anims.create({
+      key: 'walkSuper',
+      repeat: -1,
+      frameRate: 10,
+      frames: scene.anims.generateFrameNames('mario-sprites', {prefix: 'mario/walkSuper', start: 1, end: 3 }),
     });
 
     scene.anims.create({
@@ -133,10 +158,32 @@ export default class Mario extends Phaser.GameObjects.Sprite {
     });
 
     scene.anims.create({
+      key: 'standSuper',
+      repeat: -1,
+      frameRate: 10,
+      frames: [{frame: 'mario/standSuper', key: 'mario-sprites'}],
+    });
+
+    scene.anims.create({
+      key: 'half',
+      repeat: -1,
+      frameRate: 10,
+      frames: [{frame: 'mario/half', key: 'mario-sprites'}],
+    });
+
+    scene.anims.create({
       key: 'turn',
       repeat: -1,
       frameRate: 10,
       frames: [{frame: 'mario/turn', key: 'mario-sprites'}],
+    });
+
+    // turn não tem para o modo grande
+    scene.anims.create({
+      key: 'turnSuper',
+      repeat: -1,
+      frameRate: 10,
+      frames: [{frame: 'mario/turnSuper', key: 'mario-sprites'}],
     });
 
     scene.anims.create({
@@ -144,6 +191,13 @@ export default class Mario extends Phaser.GameObjects.Sprite {
       repeat: -1,
       frameRate: 10,
       frames: [{frame: 'mario/jump', key: 'mario-sprites'}],
+    });
+
+    scene.anims.create({
+      key: 'jumpSuper',
+      repeat: -1,
+      frameRate: 10,
+      frames: [{frame: 'mario/jumpSuper', key: 'mario-sprites'}],
     });
 
     scene.anims.create({
@@ -164,5 +218,37 @@ export default class Mario extends Phaser.GameObjects.Sprite {
 
   }
 
+  grow() {
+    //console.log('grow');
+    if (this.state == 'Super')
+      return;
+    
+    this.state = 'growing';
+    this.scene.physics.world.pause();
+    //this.anims.play('grow', true);
+    this.scene.setIntervalCount((count) => {
+      if(count == 0) {
+        this.y -= 8;
+        this.anims.play('half', true);
+      } else if (count == 1) {
+        this.y += 8;
+        this.anims.play('stand', true);
+      } else if (count == 2) {
+        this.y -= 8;
+        this.anims.play('half', true);
+      } else if (count == 3) {
+        this.anims.play('standSuper', true);
+      } else if (count == 4) {
+        this.anims.play('half', true);
+      } else if (count == 5) {
+        this.anims.play('standSuper', true);
+      } else if (count == 6) {
+        this.body.setSize(this.width, this.height);
+        this.scene.physics.world.resume();
+        this.state = 'Super';
+      }
+    }, 200, 7);
+
+  }
 
 }// end class

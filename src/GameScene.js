@@ -62,11 +62,11 @@ class GameScene extends Phaser.Scene {
     // Add and play the music
     this.music = this.sound.add('overworld');
 
-    /*
+
     this.music.play({
         loop: true
     });
-    */
+
     const map = this.make.tilemap({ key: 'map', tileWidth: 16, tileHeight: 16 });
     const tileset = map.addTilesetImage('SuperMarioBros-World1-1');
     this.layer = map.createDynamicLayer('world', tileset);
@@ -169,12 +169,19 @@ class GameScene extends Phaser.Scene {
               //console.log(tile.properties.powerUp)
               if (tile.properties.powerUp == "mushroom") {
                 let mushroom = new Mushroom({
-                  scene: this.mario.scene,
+                  scene: mario.scene,
                   layer: this.layer,
                   key: 'mushroom',
                   x: tile.x * 16 + 8,
                   y: tile.y * 16 - 16,
                   action: 'move',
+                });
+                this.physics.add.overlap(mario, mushroom, (mario, mushroom) => {
+                  // aqui detecta a colisão do mario com o cogumelo
+                  console.log('colidiu com o cogumelo');
+                  mario.grow();
+                  mushroom.destroy();
+
                 });
               } else {
                 // se não é nenhuma das outras, é uma moeda
@@ -197,22 +204,26 @@ class GameScene extends Phaser.Scene {
         //se ele bateu num bloco de tijolo, destrou ele ou desloca pra cima
         if (tile.index == 15 && !tile.properties.anim) {
           //console.log(tile);
-          // se o mário está pequenp, desloca o bloco
-          tile.properties.anim = true;
-          this.setIntervalCount((count) => {
-            if (count < 6) {
-              tile.pixelY--;
-            }
-            else {
-              tile.pixelY++;
-            }
-            if (count == 11)
-              tile.properties.anim = false;
-          }, 8, 12);
-
           // se o mário está grande, explode o bloco
-          //this.layer.tilemap.removeTileAt(tile.x, tile.y);
-          //this.blockEmitter.explode(6, tile.pixelX + 8, tile.pixelY);
+          if (mario.state == 'Super') {
+            this.layer.tilemap.removeTileAt(tile.x, tile.y);
+            this.blockEmitter.explode(6, tile.pixelX + 8, tile.pixelY);
+
+          } else {
+            
+            // se o mário está pequeno, desloca o bloco
+            tile.properties.anim = true;
+            this.setIntervalCount((count) => {
+              if (count < 6) {
+                tile.pixelY--;
+              }
+              else {
+                tile.pixelY++;
+              }
+              if (count == 11)
+                tile.properties.anim = false;
+            }, 8, 12);
+          }
 
         }
 
