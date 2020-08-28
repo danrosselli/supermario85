@@ -1,58 +1,84 @@
-import Enemy from './Enemy';
+export default class Goomba extends Phaser.GameObjects.Sprite {
 
-export default class Goomba extends Enemy {
-    constructor(config) {
-        super(config);
-        this.body.setVelocity(0, 0).setBounce(0, 0).setCollideWorldBounds(false);
-        this.anims.play('goomba');
-        this.killAt = 0;
+  constructor(config) {
+    super(config.scene, config.x, config.y, config.key);
+    config.scene.physics.world.enable(this);
+    config.scene.physics.world.setBounds(0,0,3392, 240);
+    config.scene.physics.add.collider(this, config.layer);
+    config.scene.add.existing(this);
+    this.scene = config.scene;
+    // é só no play q ele desenha
+    this.createAnimations(config.scene);
+    this.anims.play('goomba/walk');
+    this.body.setSize(16, 16);
+    //this.body.setSize(12, 12);
+    //this.body.offset.set(10, 4);
+
+    // coloca ele em movimento
+    this.body.setVelocityX(30);
+    this.body.setBounce(1, .4);
+    this.alive = true;
+
+  }
+
+  update(time, delta) {
+    // aqui o Goomba verifica os pontos um pouco abaixo dele para ver se existe um tile ou null
+    // se for null é pq é um vazio, então ele inverte o movimento
+    let tileLeft = this.scene.layer.getTileAtWorldXY(this.body.x, this.body.y + this.body.height + 2 );
+    let tileRight = this.scene.layer.getTileAtWorldXY(this.body.x + this.body.width, this.body.y + this.body.height + 2 );
+
+    if (!tileLeft && this.body.velocity.x < -5) {
+      //console.log('abismo a esquerda');
+      this.body.setVelocityX(this.body.velocity.x * -1);
+      //this.scene.physics.world.pause();
+
     }
+    else if (!tileRight && this.body.velocity.x > 5) {
+      //console.log('abismo a direita');
+      this.body.setVelocityX(this.body.velocity.x * -1);
+      //this.scene.physics.world.pause();
 
-    update(time, delta) {
-        // If it's not activated, then just skip the update method (see Enemy.js)
-        if (!this.activated()) {
-            return;
-        }
-        this.scene.physics.world.collide(this, this.scene.groundLayer);
-        if (this.killAt !== 0) {
-            // The killtimer is set, keep the flat Goomba then kill it for good.
-            this.body.setVelocityX(0);
-            this.killAt -= delta;
-            if (this.killAt < 0) {
-                this.kill();
-            }
-            return;
-        }
-
-        // Collide with Mario!
-        this.scene.physics.world.overlap(this, this.scene.mario, this.marioHit);
-
-        // The Goomba stopped, better try to walk in the other direction.
-        if (this.body.velocity.x === 0) {
-            this.direction = -this.direction;
-            this.body.velocity.x = this.direction;
-        }
     }
+  }
 
-    marioHit(enemy, mario) {
-        if (enemy.verticalHit(enemy, mario)) {
-            // Mario jumps on the enemy
-            mario.enemyBounce(enemy);
-            enemy.scene.sound.playAudioSprite('sfx', 'smb_stomp');
-            enemy.getFlat(enemy, mario);
-            // get points
-            enemy.scene.updateScore(100);
-        } else {
-            // Mario collides with the enemy
-            enemy.hurtMario(enemy, mario);
-        }
-    }
+  die() {
+    this.alive = false;
+    this.anims.play('goomba/flat');
+    this.body.setVelocity(0);
+    setTimeout(()=> {
+      this.destroy();
+    }, 300);
+  }
 
-    getFlat(enemy, mario) {
-        enemy.play('goombaFlat');
-        enemy.body.setVelocityX(0);
-        enemy.body.acceleration.x = 0;
-        // Keep goomba flat for 500ms, then remove it.
-        enemy.killAt = 500;
-    }
+  createAnimations(scene) {
+
+    scene.anims.create({
+      key: 'goomba/walk',
+      repeat: -1,
+      frameRate: 5,
+      frames: scene.anims.generateFrameNames('mario-sprites', {prefix: 'goomba/walk', start: 1, end: 2 }),
+    });
+
+    scene.anims.create({
+      key: 'goomba/flat',
+      repeat: -1,
+      frameRate: 10,
+      frames: [{frame: 'goomba/flat', key: 'mario-sprites'}],
+    });
+
+  }
+
+  // funcao para intervalo de tempo com contagem máxima
+  setIntervalCount(callback, delay, repetitions) {
+    var x = 0;
+    callback(x);
+    var intervalID = window.setInterval(function () {
+      if (++x === repetitions-1) {
+        window.clearInterval(intervalID);
+      }
+      callback(x);
+    }, delay);
+  }
+
+
 }

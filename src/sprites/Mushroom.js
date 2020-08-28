@@ -9,12 +9,12 @@ export default class Mushroom extends Phaser.GameObjects.Sprite {
 
         // é só no play q ele desenha a moeda animada
         this.createAnimations(config.scene);
-        this.anims.play('show');
+        this.anims.play('mushroom/show');
         this.body.setSize(16, 16);
         // coloca ele em movimento
         if (config.action == 'move') {
-          this.body.setVelocityX(70);
-          this.body.setBounce(.8, .4);
+          this.body.setVelocityX(60);
+          this.body.setBounce(1, .4);
         }
 
     }
@@ -39,7 +39,7 @@ export default class Mushroom extends Phaser.GameObjects.Sprite {
     createAnimations(scene) {
 
       scene.anims.create({
-        key: 'show',
+        key: 'mushroom/show',
         repeat: -1,
         frameRate: 5,
         frames: [{frame: 'powerup/super', key: 'mario-sprites'}],

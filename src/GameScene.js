@@ -21,16 +21,16 @@ class GameScene extends Phaser.Scene {
 
     // Music to play. It's not properly edited for an continous loop, but game play experience isn't really the aim of this repository either.
     this.load.audio('overworld', [
-        'assets/audio/overworld.ogg',
-        'assets/audio/overworld.mp3'
+      'assets/audio/overworld.ogg',
+      'assets/audio/overworld.mp3'
     ]);
 
     // Sound effects in a audioSprite.
     this.load.audioSprite('sfx', 'assets/audio/sfx.json', [
-        'assets/audio/sfx.ogg',
-        'assets/audio/sfx.mp3'
+      'assets/audio/sfx.ogg',
+      'assets/audio/sfx.mp3'
     ], {
-        instances: 4
+      instances: 4
     });
 
     //this.load.image('blue-sky', 'assets/images/blue-sky.png'); // 16-bit later
@@ -62,15 +62,13 @@ class GameScene extends Phaser.Scene {
     // Add and play the music
     this.music = this.sound.add('overworld');
 
-
     this.music.play({
-        loop: true
+      loop: true
     });
 
     const map = this.make.tilemap({ key: 'map', tileWidth: 16, tileHeight: 16 });
     const tileset = map.addTilesetImage('SuperMarioBros-World1-1');
     this.layer = map.createDynamicLayer('world', tileset);
-    this.objLayer = map.getObjectLayer('modifiers').objects;
 
     //console.log(tileset.tileProperties);
     //console.log(this.objLayer);
@@ -80,28 +78,34 @@ class GameScene extends Phaser.Scene {
 
     // aqui coloca no array todos os tiles que são do tipo questionMark
     this.questionBlocks = map.filterTiles(tile => {
-      //filtra somente os blocos que interessam
       if (tile.index == 41) {
-        /*
-        tile.collisionCallback = (mario, bloco) => {
-          if (mario.body.blocked.up) {
-            console.log('blocked up');
-          }
-          //console.log('Colidiu com o bloco: ', mario);
-        };
-        */
         return true;
       }
-
     });
 
     this.questionBlocksDelta = 0;
 
-    //console.log(this.questionBlocks);
+    //coloca os inimigos no mapa
+    this.goombaGroup = this.add.group();
+    map.getObjectLayer('enemies').objects.forEach((enemy) => {
+      //console.log(enemy);
+      // Goomba!!!
+      if (enemy.name == 'goomba') {
+        let goomba = new Goomba({
+          scene: this,
+          layer: this.layer,
+          key: 'goomba',
+          x: enemy.x,
+          y: enemy.y
+        });
+        this.goombaGroup.add(goomba);
+      }
 
-    // aqui vou verificar a camada dos objetos que veio do tileset
+    });
+
+    // aqui vou verificar a camada dos modificadores que veio do tileset
     // e vou colocar os mofificadores dentro das propriedades do tileset
-    this.objLayer.forEach((modifier) => {
+    map.getObjectLayer('modifiers').objects.forEach((modifier) => {
       // pega o tile do mapa que tem esse modificador
       let tile = this.layer.getTileAt(modifier.x / 16, modifier.y / 16 - 1);
       // pega somente as proprieddades desse tile
@@ -122,31 +126,43 @@ class GameScene extends Phaser.Scene {
     this.blockEmitterManager = this.add.particles('mario-sprites');
 
     this.blockEmitter = this.blockEmitterManager.createEmitter({
-        frame: {
-            frames: ['brick'],
-            cycle: true
-        },
-        gravityY: 1000,
-        lifespan: 1000,
-        speed: 400,
-        angle: {
-            min: -115,
-            max: -70
-        },
-        frequency: -1
+      frame: {
+        frames: ['brick'],
+        cycle: true
+      },
+      gravityY: 1000,
+      lifespan: 1000,
+      speed: 400,
+      angle: {
+        min: -115,
+        max: -70
+      },
+      frequency: -1
     });
 
-    // MARIO!!!
+    // Mario!!!
     this.mario = new Mario({
-        scene: this,
-        key: 'mario',
-        x: 16 * 6,
-        y: 16 * 9
+      scene: this,
+      key: 'mario',
+      x: 16 * 6,
+      y: 16 * 9
+    });
+
+    // aqui informa as colisões do mario com os goombas
+    this.physics.add.overlap(this.mario, this.goombaGroup, (mario, goomba) => {
+      //console.log('goobba - mario (offset): ', goomba.body.y - mario.body.y);
+      //console.log('goomba: ', );
+
+      // aqui testa se tem velocidade e posicao suficiente para amassar o goomba
+      if (mario.body.velocity.y > 50 && (goomba.body.y - mario.body.y) > 12 && goomba.alive) {
+        console.log('velocidade e posicao suficiente para amassar');
+        goomba.die();
+        mario.body.setVelocityY(-200);
+      }
     });
 
     // aqui informa as colisões do mario com o tilemap
     this.physics.add.collider(this.mario, this.layer, (mario, tile) => {
-
       // aqui testa se a cabeca do mari obateu em alguma coisa
       if (mario.body.blocked.up) {
         //console.log('houve colisao da cabeca do mario');
@@ -210,7 +226,7 @@ class GameScene extends Phaser.Scene {
             this.blockEmitter.explode(6, tile.pixelX + 8, tile.pixelY);
 
           } else {
-            
+
             // se o mário está pequeno, desloca o bloco
             tile.properties.anim = true;
             this.setIntervalCount((count) => {
@@ -246,6 +262,11 @@ class GameScene extends Phaser.Scene {
     // Run the update method of Mario
     this.mario.update(this.cursorKeys, time, delta);
 
+    // Run the update method of all enemies
+    this.goombaGroup.children.entries.forEach((sprite) => {
+      sprite.update(time, delta);
+    });
+
     this.questionBlockAnimation(delta);
 
     /*
@@ -254,7 +275,12 @@ class GameScene extends Phaser.Scene {
       console.log('outra forma de colisao');
     });
     */
-
+    // Collide with Mario!
+    /*
+    this.physics.world.overlap(this.goomba1, this.mario, (goomba, mario) => {
+      console.log('overlap aqui:', goomba);
+    });
+    */
 
   }
 
@@ -311,6 +337,9 @@ class GameScene extends Phaser.Scene {
     }, delay);
   }
 
+  copyObject(obj) {
+		return JSON.parse(JSON.stringify(obj));
+	}
 
 
 }// end class

@@ -17,6 +17,14 @@ export default class Mario extends Phaser.GameObjects.Sprite {
     this.jumpCount = 0;
     this.body.collideWorldBounds = true;
     //this.setCollideWorldBounds(true);
+
+    // evento que testa se o sprite chegou na borda da tela
+    this.body.onWorldBounds = true;
+    this.scene.physics.world.on('worldbounds', (body) => {
+      console.log('mario bateu na borda da fase');
+    });
+
+
     //this.onWorldBounds = true;
     //this.body.onCollide = new Phaser.Signal();
     //this.body.onCollide.add(hitSprite, this);
@@ -222,7 +230,7 @@ export default class Mario extends Phaser.GameObjects.Sprite {
     //console.log('grow');
     if (this.state == 'Super')
       return;
-    
+
     this.state = 'growing';
     this.scene.physics.world.pause();
     //this.anims.play('grow', true);
