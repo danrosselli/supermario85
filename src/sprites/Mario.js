@@ -255,7 +255,7 @@ export default class Mario extends Phaser.GameObjects.Sprite {
         this.scene.physics.world.resume();
         this.state = 'Super';
       }
-    }, 200, 7);
+    }, 180, 7);
 
   }
 

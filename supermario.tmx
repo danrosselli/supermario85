@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.2" tiledversion="1.3.5" orientation="orthogonal" renderorder="right-down" width="237" height="15" tilewidth="16" tileheight="16" infinite="0" nextlayerid="4" nextobjectid="156">
+<map version="1.2" tiledversion="1.3.5" orientation="orthogonal" renderorder="right-down" width="237" height="15" tilewidth="16" tileheight="16" infinite="0" nextlayerid="4" nextobjectid="157">
  <editorsettings>
   <export target="assets/tilemaps/maps/super-mario.json" format="json"/>
  </editorsettings>
@@ -273,7 +273,7 @@
   <object id="25" name="goomba" gid="45" x="1264" y="144" width="16" height="16"/>
   <object id="26" name="goomba" gid="45" x="1552" y="208" width="16" height="16"/>
   <object id="27" name="goomba" gid="45" x="1568" y="208" width="16" height="16"/>
-  <object id="28" gid="46" x="1696" y="208" width="16" height="16"/>
+  <object id="28" name="turtle" gid="46" x="1696" y="208" width="16" height="16"/>
   <object id="29" name="goomba" gid="45" x="1856" y="208" width="16" height="16"/>
   <object id="30" name="goomba" gid="45" x="1888" y="208" width="16" height="16"/>
   <object id="32" name="goomba" gid="45" x="2128" y="208" width="16" height="16"/>
@@ -301,5 +301,6 @@
   <object id="85" gid="46" x="3472" y="176" width="16" height="16"/>
   <object id="154" name="goomba" gid="45" x="560" y="208" width="16" height="16"/>
   <object id="155" name="goomba" gid="45" x="512" y="208" width="16" height="16"/>
+  <object id="156" name="turtle" gid="46" x="416" y="208" width="16" height="16"/>
  </objectgroup>
 </map>

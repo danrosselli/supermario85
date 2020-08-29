@@ -2,8 +2,10 @@ import Mario from './sprites/Mario';
 import Coin from './sprites/Coin';
 import Mushroom from './sprites/Mushroom';
 
+// enemies
 import Goomba from './sprites/Goomba';
 import Turtle from './sprites/Turtle';
+
 import SMBTileSprite from './sprites/SMBTileSprite';
 import Fire from './sprites/Fire';
 
@@ -87,6 +89,7 @@ class GameScene extends Phaser.Scene {
 
     //coloca os inimigos no mapa
     this.goombaGroup = this.add.group();
+    this.turtleGroup = this.add.group();
     map.getObjectLayer('enemies').objects.forEach((enemy) => {
       //console.log(enemy);
       // Goomba!!!
@@ -99,6 +102,17 @@ class GameScene extends Phaser.Scene {
           y: enemy.y
         });
         this.goombaGroup.add(goomba);
+      }
+
+      if (enemy.name == 'turtle') {
+        let turtle = new Turtle({
+          scene: this,
+          layer: this.layer,
+          key: 'goomba',
+          x: enemy.x,
+          y: enemy.y
+        });
+        this.turtleGroup.add(turtle);
       }
 
     });
@@ -150,13 +164,36 @@ class GameScene extends Phaser.Scene {
 
     // aqui informa as colisões do mario com os goombas
     this.physics.add.overlap(this.mario, this.goombaGroup, (mario, goomba) => {
-      //console.log('goobba - mario (offset): ', goomba.body.y - mario.body.y);
-      //console.log('goomba: ', );
+
+      // aqui verifica no eixo y o quanto da parte de baixo do mario sobrepôe a parte de cima do inimigo
+      let overlap = parseInt(mario.body.height + mario.body.y - goomba.body.y);
 
       // aqui testa se tem velocidade e posicao suficiente para amassar o goomba
-      if (mario.body.velocity.y > 50 && (goomba.body.y - mario.body.y) > 12 && goomba.alive) {
+      if (mario.body.velocity.y > 40 && overlap >= 3 && overlap <= 5 && goomba.alive) {
         console.log('velocidade e posicao suficiente para amassar');
-        goomba.die();
+        mario.body.setVelocityY(-200);
+        goomba.dieFlat();
+      }
+    });
+
+    // aqui informa as colisões do mario com os goombas
+    this.physics.add.overlap(this.mario, this.turtleGroup, (mario, turtle) => {
+      // aqui verifica no eixo y o quanto da parte de baixo do mario sobrepôe a parte de cima do inimigo
+      let overlap = parseInt(mario.body.height + mario.body.y - turtle.body.y);
+
+      // o sinal verifica se o casco vai correr para a esquerda ou direita
+      let signal = Math.sign(turtle.body.x + (mario.body.width/2) - mario.body.x);
+
+      // aqui testa se tem velocidade e posicao suficiente para amassar o goomba
+      if (mario.body.velocity.y > 40 && overlap >= 8 && overlap <= 10 && turtle.status == 'normal') {
+        console.log('velocidade e posicao suficiente para amassar');
+        turtle.shell();
+        mario.body.setVelocityY(-200);
+      }
+
+      if (mario.body.velocity.y > 50 && overlap >= 12 && overlap <= 14 && turtle.status == 'shell') {
+        console.log('velocidade e posicao suficiente para correr');
+        turtle.slip(signal);
         mario.body.setVelocityY(-200);
       }
     });
@@ -251,10 +288,21 @@ class GameScene extends Phaser.Scene {
 
     // define o input do teclado
     this.cursorKeys = this.input.keyboard.createCursorKeys();
+    this.keyA = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
+    this.keySPACE = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 
+    //console.log(Phaser.Input.Keyboard.KeyCodes);
   }
 
   update(time, delta) {
+
+    if (this.keyA.isDown) {
+      //console.log(this.mario.body.position);
+    }
+
+    if (this.keySPACE.isDown) {
+      //console.log(this.mario.body.position);
+    }
 
     if (this.mario.x >= 202 && this.mario.x <= 3192)
       this.cameras.main.centerOnX(this.mario.x);
@@ -267,20 +315,11 @@ class GameScene extends Phaser.Scene {
       sprite.update(time, delta);
     });
 
-    this.questionBlockAnimation(delta);
+    this.turtleGroup.children.entries.forEach((sprite) => {
+      sprite.update(time, delta);
+    });
 
-    /*
-    // essa aqui nao deu certo, ainda não sei porque
-    this.physics.world.collide(this.mario, this.layer, () => {
-      console.log('outra forma de colisao');
-    });
-    */
-    // Collide with Mario!
-    /*
-    this.physics.world.overlap(this.goomba1, this.mario, (goomba, mario) => {
-      console.log('overlap aqui:', goomba);
-    });
-    */
+    this.questionBlockAnimation(delta);
 
   }
 

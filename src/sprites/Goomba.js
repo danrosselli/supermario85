@@ -30,18 +30,14 @@ export default class Goomba extends Phaser.GameObjects.Sprite {
     if (!tileLeft && this.body.velocity.x < -5) {
       //console.log('abismo a esquerda');
       this.body.setVelocityX(this.body.velocity.x * -1);
-      //this.scene.physics.world.pause();
-
     }
     else if (!tileRight && this.body.velocity.x > 5) {
       //console.log('abismo a direita');
       this.body.setVelocityX(this.body.velocity.x * -1);
-      //this.scene.physics.world.pause();
-
     }
   }
 
-  die() {
+  dieFlat() {
     this.alive = false;
     this.anims.play('goomba/flat');
     this.body.setVelocity(0);

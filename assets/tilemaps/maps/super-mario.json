@@ -433,7 +433,7 @@
                  "gid":46,
                  "height":16,
                  "id":28,
-                 "name":"",
+                 "name":"turtle",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -764,6 +764,18 @@
                  "width":16,
                  "x":512,
                  "y":208
+                }, 
+                {
+                 "gid":46,
+                 "height":16,
+                 "id":156,
+                 "name":"turtle",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":16,
+                 "x":416,
+                 "y":208
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -772,7 +784,7 @@
          "y":0
         }],
  "nextlayerid":4,
- "nextobjectid":156,
+ "nextobjectid":157,
  "orientation":"orthogonal",
  "properties":[
         {

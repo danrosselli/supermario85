@@ -1,83 +1,105 @@
-import Enemy from './Enemy';
+export default class Turtle extends Phaser.GameObjects.Sprite {
 
-export default class Turtle extends Enemy {
-    constructor(config) {
-        super(config);
-        this.flipX = true;
-        this.anims.play('turtle');
-        this.sliding = false;
-        this.type = 'turtle';
-        this.body.setSize(12, 12);
-        this.body.offset.set(2, 12);
+  constructor(config) {
+    super(config.scene, config.x, config.y, config.key);
+    config.scene.physics.world.enable(this);
+    config.scene.physics.world.setBounds(0,0,3392, 240);
+    config.scene.physics.add.collider(this, config.layer);
+    config.scene.add.existing(this);
+    this.scene = config.scene;
+    // é só no play q ele desenha
+    this.createAnimations(config.scene);
+    this.anims.play('turtle/walk');
+    this.body.setSize(16, 24);
+    //this.body.setSize(12, 12);
+    //this.body.offset.set(10, 4);
+
+    // coloca ele em movimento
+    this.body.setVelocityX(20);
+    this.body.setBounce(1, .4);
+    this.status = 'normal';
+
+  }
+
+  update(time, delta) {
+
+    // aqui desenha o sprite de acordo com a direção que ele vai
+    if (this.body.velocity.x > 5) {
+      this.flipX = false;
+    }
+    else if (this.body.velocity.x < -5) {
+      this.flipX = true;
+    }
+    // aqui o Goomba verifica os pontos um pouco abaixo dele para ver se existe um tile ou null
+    // se for null é pq é um vazio, então ele inverte o movimento
+    let tileLeft = this.scene.layer.getTileAtWorldXY(this.body.x, this.body.y + this.body.height + 2 );
+    let tileRight = this.scene.layer.getTileAtWorldXY(this.body.x + this.body.width, this.body.y + this.body.height + 2 );
+
+    if (!tileLeft && this.body.velocity.x < -5 && this.status == 'normal') {
+      //console.log('abismo a esquerda');
+      this.body.setVelocityX(this.body.velocity.x * -1);
+    }
+    else if (!tileRight && this.body.velocity.x > 5 && this.status == 'normal') {
+      //console.log('abismo a direita');
+      this.body.setVelocityX(this.body.velocity.x * -1);
     }
 
-    update() {
-        if (!this.activated()) {
-            return;
-        }
-        if (this.sliding) {
-            this.scene.physics.world.collide(this, this.scene.groundLayer, this.scene.tileCollision);
-            this.scene.enemyGroup.children.entries.forEach((enemy) => {
-                if (this !== enemy) {
-                    this.scene.physics.world.overlap(this, enemy, this.slidekill);
-                }
-            });
-        } else {
-            this.scene.physics.world.collide(this, this.scene.groundLayer);
-        }
-        this.scene.physics.world.overlap(this, this.scene.mario, this.marioHit);
-        if (this.body.velocity.x === 0) {
-            this.direction = -this.direction;
-            this.body.velocity.x = this.direction;
-            this.flipX = this.direction < 0;
-        }
+    // verifica se a tartaruga caiu para baixo da borda da tela
+    if (this.body.position.y > this.scene.physics.world.bounds.bottom) {
+      this.die();
     }
 
-    slidekill(turtle, victim) {
-        if (typeof victim.starKilled !== 'undefined') {
-            victim.starKilled();
-        }
+  }
+
+  shell() {
+    this.status = 'shell';
+    this.anims.play('turtle/shell');
+    this.body.setVelocity(0);
+    this.reviveTimeout = setTimeout(() => {
+      this.revive();
+    }, 10000);
+  }
+
+  slip(signal) {
+    this.status = 'slip';
+    clearInterval(this.reviveTimeout);
+    this.body.setVelocity(200 * signal);
+  }
+
+  revive() {
+    this.status = 'normal';
+    this.anims.play('turtle/walk', true);
+    if (!this.flipX) {
+      this.body.setVelocityX(20);
+    }
+    else {
+      this.body.setVelocityX(-20);
     }
 
-    marioHit(enemy, mario) {
-        // direction
-        // den av overlap x or overlap y som är störst
-        // let verticalHit = Math.abs(enemy.x-mario.x)<Math.abs(enemy.y-mario.y);
+  }
 
-        // console.log('vertical',verticalHit);
-        if (mario.star.active) {
-            enemy.hurtMario(enemy, mario);
-            return;
-        }
+  die() {
+    console.log('A tartaruga caiu...');
+    clearInterval(this.reviveTimeout);
+    this.destroy();
+  }
 
-        if (enemy.verticalHit(enemy, mario)) {
-            // get points
-            enemy.scene.updateScore(100);
-            if (!enemy.sliding || (enemy.sliding && enemy.body.velocity.x === 0)) {
-                enemy.scene.sound.playAudioSprite('sfx', 'smb_kick');
-                // enemy.body.height = 16;
-                enemy.direction = 150 * (mario.x < enemy.x ? 1 : -1);
+  createAnimations(scene) {
 
-                enemy.body.velocity.x = enemy.direction;
-                enemy.sliding = true;
-                enemy.play('turtleShell');
-            } else {
-                enemy.scene.sound.playAudioSprite('sfx', 'smb_stomp');
+    scene.anims.create({
+      key: 'turtle/walk',
+      repeat: -1,
+      frameRate: 5,
+      frames: scene.anims.generateFrameNames('mario-sprites', {prefix: 'turtle/turtle', start: 0, end: 1 }),
+    });
 
-                enemy.direction = 0;
-                enemy.body.velocity.x = 0;
-                enemy.sliding = true;
-                enemy.play('turtleShell');
-            }
-            mario.enemyBounce(enemy);
-        } else {
-            if (enemy.sliding && enemy.body.velocity.x === 0) {
-                enemy.scene.sound.playAudioSprite('sfx', 'smb_kick');
+    scene.anims.create({
+      key: 'turtle/shell',
+      repeat: -1,
+      frameRate: 10,
+      frames: [{frame: 'turtle/shell', key: 'mario-sprites'}],
+    });
 
-                enemy.direction = 150;
-                enemy.body.velocity.x = 150;
-            }
-            enemy.hurtMario(enemy, mario);
-        }
-    }
+  }
+
 }
